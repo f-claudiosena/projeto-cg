@@ -8,7 +8,7 @@ Um jogo arcade 2D interativo desenvolvido com técnicas clássicas de computaç�
 
 ### 🎯 Objetivo do Jogo
 - Sobreviva o máximo de tempo desviando dos ouriços
-- Colete estrelas para ganhar 100 pontos
+- Colete estrelas para ganhar 100 pontos extras
 - Evite a mina (aparece após 5.000 pontos)
 - Acompanhe seu progresso no viewport/radar em tempo real
 
@@ -56,12 +56,6 @@ Arquivo principal do jogo com implementação completa de:
 - Sistema de menus
 - Viewport/Radar
 - Viewport/Radar em tempo real
-
-### `webgl_good_baloon.html`
-Versão alternativa com renderização WebGL (não utiliza setPixel)
-
-### `webgl-baloon.html`
-Versão com viewport separado usando WebGL
 
 ## 🕹️ Controles
 
@@ -310,6 +304,7 @@ Este projeto ensina:
 Este projeto é fornecido como material educacional.
 
 ## 👨‍💻 Autor
+Francisco Cláudio da Silva Sena Filho
 
 Desenvolvido como trabalho prático de Computação Gráfica.
 
