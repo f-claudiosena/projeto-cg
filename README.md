@@ -1,10 +1,10 @@
-# 🎮 Balão x Ouriços - Trabalho de Computação Gráfica
+# 🎮 Balãozin - Trabalho de Computação Gráfica
 
 Um jogo arcade 2D interativo desenvolvido com técnicas clássicas de computação gráfica, incluindo renderização por pixel com anti-aliasing, algoritmos de desenho e transformações 3D.
 
 ## 📋 Descrição do Projeto
 
-**Balão x Ouriços** é um jogo educacional de tiro ao alvo onde o jogador controla um balão que deve desviar de obstáculos (ouriços) e coletar estrelas para ganhar pontos. O projeto demonstra implementações práticas de conceitos fundamentais de computação gráfica.
+**Balãozin** é um jogo educacional de tiro ao alvo onde o jogador controla um balão que deve desviar de obstáculos (ouriços) e coletar estrelas para ganhar pontos. O projeto demonstra implementações práticas de conceitos fundamentais de computação gráfica.
 
 ### 🎯 Objetivo do Jogo
 - Sobreviva o máximo de tempo desviando dos ouriços
