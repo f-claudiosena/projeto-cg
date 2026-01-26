@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Balão x Ouriços - Trabalho CG</title>
+  <style>
+    body { 
+      margin: 0; 
+      background: #0a0e27; 
+      color: #fff; 
+      font-family: 'Courier New', Courier, monospace; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    #info { 
+      padding: 15px; 
+      text-align: center; 
+      background: rgba(255, 255, 255, 0.05); 
+      width: 100%; 
+      border-bottom: 1px solid #4da6ff;
+      margin-bottom: 20px; 
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .container {
+      display: flex;
+      gap: 30px;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 20px;
+    }
+    .game-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .game-border {
+      border: 4px solid #ffffff;
+      padding: 0;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+      background: #000;
+    }
+    #canvasGame { 
+      display: block;
+      cursor: none;
+    }
+    .game-label {
+      color: #4da6ff;
+      font-size: 14px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+    .map-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .map-border {
+      border: 3px solid #4da6ff;
+      padding: 0;
+      box-shadow: 0 0 20px rgba(77, 166, 255, 0.5);
+      background: #000;
+    }
+    #canvasMap { 
+      display: block;
+    }
+    .map-label {
+      color: #4da6ff;
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    /* Menus */
+    .menu-overlay { 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      width: 100%; 
+      height: 100%; 
+      background: rgba(0, 0, 0, 0.9); 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: center; 
+      align-items: center; 
+      z-index: 100; 
+    }
+    .menu-box { 
+      background: rgba(20, 30, 60, 0.95); 
+      border: 2px solid #4da6ff; 
+      border-radius: 10px; 
+      padding: 40px; 
+      text-align: center; 
+      min-width: 300px;
+      box-shadow: 0 0 30px rgba(77, 166, 255, 0.3);
+    }
+    .menu-title { 
+      font-size: 32px; 
+      color: #4da6ff; 
+      margin-bottom: 30px; 
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+    .menu-option { 
+      background: rgba(40, 60, 100, 0.8); 
+      border: 1px solid #4da6ff; 
+      padding: 15px; 
+      margin: 12px 0; 
+      cursor: pointer; 
+      color: #fff; 
+      font-family: inherit; 
+      font-size: 16px; 
+      width: 100%; 
+      transition: 0.2s; 
+      border-radius: 5px;
+    }
+    .menu-option:hover { 
+      background: rgba(77, 166, 255, 0.2); 
+      border-color: #fff;
+      transform: scale(1.02);
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<div id="info">
+  ⬆️ ⬇️ : Mover | P: Pausar | R: Reiniciar | ESC: Menu
+</div>
+
+<div class="container">
+  <!-- Jogo Principal -->
+  <div class="game-section">
+    <div class="game-border">
+      <canvas id="canvasGame" width="500" height="400"></canvas>
+    </div>
+    <div class="game-label">JOGO PRINCIPAL</div>
+  </div>
+
+  <!-- Viewport/Mapa -->
+  <div class="map-section">
+    <div class="map-border">
+      <canvas id="canvasMap" width="200" height="160"></canvas>
+    </div>
+    <div class="map-label">VIEWPORT / RADAR</div>
+  </div>
+</div>
+
+<!-- Menus -->
+<div id="menu-main" class="menu-overlay hidden">
+  <div class="menu-box">
+    <div class="menu-title">BALÃO x OURIÇOS</div>
+    <div class="menu-option" onclick="startGame()">► JOGAR</div>
+    <div class="menu-option" onclick="show('menu-instr')">ℹ️ INSTRUÇÕES</div>
+  </div>
+</div>
+
+<div id="menu-instr" class="menu-overlay hidden">
+  <div class="menu-box">
+    <div class="menu-title">INSTRUÇÕES</div>
+    <div style="color:#ccc; text-align:left; line-height:1.8; margin-bottom:20px; font-size:14px;">
+      🎯 <strong>OBJETIVO:</strong> Sobreviva e colete as estrelas!<br><br>
+      ⬆️ ⬇️ <strong>CONTROLE:</strong> Use setas para mover o balão<br><br>
+      ⭐ <strong>ESTRELA:</strong> Vale +100 pontos<br><br>
+      💣 <strong>MINA:</strong> Aparece após 5k pontos<br><br>
+      🟣 <strong>OURIÇOS:</strong> Evite a todo custo!
+    </div>
+    <div class="menu-option" onclick="show('menu-main')">← VOLTAR</div>
+  </div>
+</div>
+
+<div id="menu-pause" class="menu-overlay hidden">
+  <div class="menu-box">
+    <div class="menu-title">PAUSADO</div>
+    <div class="menu-option" onclick="resumeGame()">▶ CONTINUAR</div>
+    <div class="menu-option" onclick="startGame()">🔄 REINICIAR</div>
+    <div class="menu-option" onclick="goMenu()">🏠 MENU</div>
+  </div>
+</div>
+
+<div id="menu-over" class="menu-overlay hidden">
+  <div class="menu-box">
+    <div class="menu-title" style="color:#ff6666">FIM DE JOGO</div>
+    <div id="scoreVal" style="margin-bottom:20px; color:#aaa; font-size:18px;">Score: 0</div>
+    <div class="menu-option" onclick="startGame()">🔄 TENTAR NOVAMENTE</div>
+    <div class="menu-option" onclick="goMenu()">🏠 MENU PRINCIPAL</div>
+  </div>
+</div>
+
+<script>
+// ============================================================================
+// BALÃO x OURIÇOS - Trabalho de Computação Gráfica
+// Jogo arcade com renderização por SetPixel, Anti-Aliasing, e Transformações 3D
+// ============================================================================
+
+// ====== CONFIGURAÇÕES E CONSTANTES ======
+// Dimensões do canvas principal (jogo) - 500x400 pixels
+const W = 500, H = 400;
+// Dimensões do canvas do mapa/viewport - 200x160 pixels (escala 0.4x)
+const MAP_W = 200, MAP_H = 160;
+// Velocidade de movimento do balão (pixels por frame)
+const BALLOON_SPEED = 3.0;
+// Estados do jogo (máquina de estados para controlar fluxo do jogo)
+const GAME_STATE = { INTRO: -1, MENU: 0, PLAYING: 1, PAUSED: 2, GAME_OVER: 3 };
+
+// ====== BUFFERS DE PIXELS E VARIÁVEIS GLOBAIS ======
+// Buffer principal: cada pixel é representado por 4 bytes (RGBA)
+// Total: 500*400*4 = 800.000 bytes para armazenar a cor de cada pixel
+// Variáveis globais do jogo
+let gameState = GAME_STATE.INTRO;
+let introFrame = 0;
+let introPhase = 1; // 1 para primeira intro, 2 para segunda intro
+let score = 0;
+let highScore = localStorage.getItem('cgHighScore') || 0;
+
+const cvs = document.getElementById('canvasGame');
+const cvsMap = document.getElementById('canvasMap');
+const ctx = cvs.getContext('2d');
+const ctxMap = cvsMap.getContext('2d');
+
+// Buffer principal: cada pixel é representado por 4 bytes (RGBA)
+// Total: 500*400*4 = 800.000 bytes para armazenar a cor de cada pixel
+const pixels = new Uint8Array(W * H * 4);
+// Buffer do mapa: mesmo conceito mas em escala menor (200*160*4 = 128.000 bytes)
+const pixMap = new Uint8Array(MAP_W * MAP_H * 4);
+
+// Teclas pressionadas (rastreadas via event listeners)
+const keys = { ArrowUp: false, ArrowDown: false };
+
+// ====== ENTIDADES DO JOGO ======
+// Posição Y do balão (controlada pelo jogador, X é fixo)
+let balloonY = H / 2;
+// Posição X fixa do balão (sempre no lado esquerdo)
+const balloonX = 100;
+// Raio do balão em pixels
+const balloonR = 18;
+// Array de ouriços inimigos que se movem da direita para esquerda
+let spikes = [];
+
+// Estrela coletável: oferece +100 pontos, pulsa com animação senoidal
+let star = { x: -100, y: 0, active: false, baseRadius: 15, scale: 1.0, pulseAngle: 0, timer: 0 };
+// Mina marinha: obstáculo com rotação 3D no eixo Z, aparece após 5.000 pontos
+let mine = { x: -100, y: 0, r: 20, active: false, timer: 0, blinkTimer: 0, angle: 0 };
+
+// ============================================================================
+// FUNÇÕES GRÁFICAS - RENDERIZAÇÃO POR SETPIXEL
+// Todas as formas são desenhadas manipulando diretamente o buffer de pixels
+// ============================================================================
+
+/**
+ * setPixel - Escreve uma cor diretamente em um pixel do buffer
+ * Esta é a função base para TODAS as operações gráficas.
+ * @param {number} x, y - Coordenadas do pixel
+ * @param {number} r, g, b - Componentes de cor (0-255)
+ * @param {number} a - Alpha/Opacidade (0-255)
+ */
+function setPixel(x, y, r, g, b, a = 255) {
+  if (x < 0 || x >= W || y < 0 || y >= H) return;
+  const index = (Math.floor(y) * W + Math.floor(x)) * 4;
+  pixels[index] = r; pixels[index+1] = g; pixels[index+2] = b; pixels[index+3] = a;
+}
+
+/**
+ * blendPixel - Escreve um pixel com interpolação alpha (anti-aliasing)
+ * Realiza blend (mistura) da cor com o fundo usando interpolação linear.
+ * Fórmula: cor_final = cor_nova * alpha + cor_fundo * (1 - alpha)
+ */
+function blendPixel(x, y, r, g, b, alphaFactor) {
+  if (x < 0 || x >= W || y < 0 || y >= H) return;
+  if (alphaFactor <= 0) return;
+  if (alphaFactor > 1) alphaFactor = 1;
+  const i = (Math.floor(y) * W + Math.floor(x)) * 4;
+  const bgR = pixels[i], bgG = pixels[i+1], bgB = pixels[i+2];
+  pixels[i]   = (r * alphaFactor + bgR * (1 - alphaFactor)) | 0;
+  pixels[i+1] = (g * alphaFactor + bgG * (1 - alphaFactor)) | 0;
+  pixels[i+2] = (b * alphaFactor + bgB * (1 - alphaFactor)) | 0;
+  pixels[i+3] = 255;
+}
+
+/**
+ * drawLineAA - Desenha uma linha com anti-aliasing (Bresenham + Xiaolin Wu)
+ * Implementa algoritmo clássico para linhas suaves.
+ */
+function drawLineAA(x0, y0, x1, y1, color) {
+  let steep = Math.abs(y1 - y0) > Math.abs(x1 - x0);
+  if (steep) { [x0, y0] = [y0, x0]; [x1, y1] = [y1, x1]; }
+  if (x0 > x1) { [x0, x1] = [x1, x0]; [y0, y1] = [y1, y0]; }
+  let dx = x1 - x0, dy = y1 - y0;
+  let gradient = dx === 0 ? 1 : dy / dx;
+  let xend = Math.round(x0), yend = y0 + gradient * (xend - x0), xgap = 1 - (x0 + 0.5) % 1;
+  let xpxl1 = xend, ypxl1 = Math.floor(yend);
+  if (steep) { blendPixel(ypxl1, xpxl1, color[0], color[1], color[2], (1-(yend%1))*xgap); blendPixel(ypxl1+1, xpxl1, color[0], color[1], color[2], (yend%1)*xgap); }
+  else { blendPixel(xpxl1, ypxl1, color[0], color[1], color[2], (1-(yend%1))*xgap); blendPixel(xpxl1, ypxl1+1, color[0], color[1], color[2], (yend%1)*xgap); }
+  let intery = yend + gradient;
+  xend = Math.round(x1); yend = y1 + gradient * (xend - x1); xgap = (x1 + 0.5) % 1;
+  let xpxl2 = xend, ypxl2 = Math.floor(yend);
+  if (steep) { blendPixel(ypxl2, xpxl2, color[0], color[1], color[2], (1-(yend%1))*xgap); blendPixel(ypxl2+1, xpxl2, color[0], color[1], color[2], (yend%1)*xgap); }
+  else { blendPixel(xpxl2, ypxl2, color[0], color[1], color[2], (1-(yend%1))*xgap); blendPixel(xpxl2, ypxl2+1, color[0], color[1], color[2], (yend%1)*xgap); }
+  if (steep) { for (let x=xpxl1+1; x<xpxl2; x++) { blendPixel(Math.floor(intery), x, color[0], color[1], color[2], 1-(intery%1)); blendPixel(Math.floor(intery)+1, x, color[0], color[1], color[2], intery%1); intery+=gradient; } }
+  else { for (let x=xpxl1+1; x<xpxl2; x++) { blendPixel(x, Math.floor(intery), color[0], color[1], color[2], 1-(intery%1)); blendPixel(x, Math.floor(intery)+1, color[0], color[1], color[2], intery%1); intery+=gradient; } }
+}
+
+/**
+ * fillCircleAA - Preenche um círculo com anti-aliasing
+ * Usa técnica de Scanline + cálculo de distância para suavizar bordas.
+ */
+function fillCircleAA(cx, cy, r, color) {
+  const minX = Math.floor(cx - r - 1), maxX = Math.ceil(cx + r + 1);
+  const minY = Math.floor(cy - r - 1), maxY = Math.ceil(cy + r + 1);
+  const alpha = color.length > 3 ? color[3] / 255 : 1;
+  for (let y = minY; y < maxY; y++) {
+    for (let x = minX; x < maxX; x++) {
+      const dy = y - cy, dx = x - cx;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < r - 0.8) { if (alpha >= 1) setPixel(x, y, color[0], color[1], color[2], 255); else blendPixel(x, y, color[0], color[1], color[2], alpha); }
+      else if (dist < r + 0.8) { const factor = 1.0 - (dist - (r - 0.8)) / 1.6; blendPixel(x, y, color[0], color[1], color[2], factor * alpha); }
+    }
+  }
+}
+
+/**
+ * fillBalloonAA - Preenche uma elipse com anti-aliasing (forma do balão)
+ * Renderiza o balão com forma ligeiramente modificada para parecer mais realista.
+ */
+function fillBalloonAA(cx, cy, rx, ry, color) {
+  const minX = Math.floor(cx - rx - 2), maxX = Math.ceil(cx + rx + 2);
+  const minY = Math.floor(cy - ry - 2), maxY = Math.ceil(cy + ry + 2);
+  const alpha = color.length > 3 ? color[3] / 255 : 1;
+  for (let y = minY; y < maxY; y++) {
+    for (let x = minX; x < maxX; x++) {
+      let dx = x - cx; let dy = y - cy;
+      let heightFactor = dy / ry;
+      let currentRx = rx;
+      if (heightFactor > 0) currentRx = rx * (1.0 - 0.25 * heightFactor);
+      else currentRx = rx * 1.05;
+      let val = (dx*dx)/(currentRx*currentRx) + (dy*dy)/(ry*ry);
+      let dist = Math.sqrt(val);
+      let edgeThickness = 0.5 / Math.max(currentRx, ry);
+      if (dist < 1.0 - edgeThickness) {
+         if (alpha >= 1) setPixel(x, y, color[0], color[1], color[2], 255);
+         else blendPixel(x, y, color[0], color[1], color[2], alpha);
+      } else if (dist < 1.0) {
+         let factor = (1.0 - dist) / edgeThickness;
+         if (factor < 0) factor = 0;
+         blendPixel(x, y, color[0], color[1], color[2], factor * alpha);
+      }
+    }
+  }
+}
+
+/**
+ * drawStarAA - Desenha uma estrela com anti-aliasing
+ * Cria uma estrela de 5 pontas com animação de pulsação.
+ */
+function drawStarAA(cx, cy, baseRadius, scale, color) {
+    const points = 5, outerRadius = baseRadius * scale, innerRadius = (baseRadius * 0.4) * scale;
+    let vertices = [];
+    for (let i = 0; i < points * 2; i++) {
+        let r = (i % 2 === 0) ? outerRadius : innerRadius;
+        let angle = (Math.PI / points) * i - Math.PI / 2;
+        vertices.push({ x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r });
+    }
+    for (let i = 0; i < vertices.length; i++) {
+        let p1 = vertices[i], p2 = vertices[(i + 1) % vertices.length];
+        drawLineAA(p1.x, p1.y, p2.x, p2.y, color);
+    }
+    fillCircleAA(cx, cy, 4 * scale, [255, 255, 200, 150]);
+}
+
+/**
+ * drawMineAA - Desenha uma mina marinha com rotação 3D e nódulos orbitais
+ * 
+ * TÉCNICA 3D EM 2D:
+ * - Cria 8 nódulos ao redor do corpo central
+ * - Calcula profundidade (Z) usando seno do ângulo
+ * - Z-buffering: nódulos traseiros aparecem mais escuros, frontais mais claros
+ * - Cria ilusão de profundidade através de diferenças de cor
+ */
+function drawMineAA(cx, cy, r) {
+    const numBumps = 8;
+    const bumpRadius = 5;
+    const bumps3D = [];
+    
+    // Calcula posições dos nódulos em 3D com órbita lenta
+    for(let i = 0; i < numBumps; i++) {
+        // Ângulo da órbita com rotação lenta (0.1x do mine.angle)
+        const orbitAngle = mine.angle * 0.1 + (Math.PI * 2 * i) / numBumps;
+        const orbitRadius = r + 8;
+        const bx = Math.cos(orbitAngle) * orbitRadius;
+        const bz = Math.sin(orbitAngle) * orbitRadius;
+        
+        bumps3D.push({
+            x: cx + bx,
+            y: cy,
+            z: bz,  // Profundidade para Z-buffering
+            radius: bumpRadius
+        });
+    }
+    
+    // Separa nódulos entre frente e trás para renderização ordenada
+    const backBumps = bumps3D.filter(b => b.z < 0);
+    const frontBumps = bumps3D.filter(b => b.z >= 0);
+    
+    // Renderiza na ordem: trás → corpo → núcleo → frente
+    // (Z-buffering simples)
+    
+    for (const b of backBumps) {
+        fillCircleAA(b.x, b.y, b.radius, [35, 42, 55, 255]);
+    }
+    
+    fillCircleAA(cx, cy, r, [70, 80, 95, 255]);
+    
+    // Núcleo piscante (aviso de perigo)
+    mine.blinkTimer++;
+    const blink = Math.floor(mine.blinkTimer / 15) % 2 === 0;
+    const coreColor = blink ? [200, 100, 100, 255] : [80, 30, 30, 255];
+    fillCircleAA(cx, cy, r * 0.25, coreColor);
+    
+    for (const b of frontBumps) {
+        fillCircleAA(b.x, b.y, b.radius, [65, 75, 95, 255]);
+    }
+}
+
+const FONT = { 'A':["0110","1001","1111","1001","1001"], 'B':["1110","1001","1110","1001","1110"], 'C':["0110","1000","1000","1000","0110"], 'D':["1110","1001","1001","1001","1110"], 'E':["1111","1000","1110","1000","1111"], 'F':["1111","1000","1110","1000","1000"], 'G':["0110","1000","1011","1001","0110"], 'H':["1001","1001","1111","1001","1001"], 'I':["111","010","010","010","111"], 'J':["0111","0010","0010","1010","0100"], 'K':["1001","1010","1100","1010","1001"], 'L':["1000","1000","1000","1000","1111"], 'M':["10001","11011","10101","10001","10001"], 'N':["1001","1101","1011","1001","1001"], 'O':["0110","1001","1001","1001","0110"], 'P':["1110","1001","1110","1000","1000"], 'Q':["0110","1001","1001","1011","0111"], 'R':["1110","1001","1110","1010","1001"], 'S':["0111","1000","0110","0001","1110"], 'T':["11111","00100","00100","00100","00100"], 'U':["1001","1001","1001","1001","0110"], 'V':["10001","10001","01010","01010","00100"], 'W':["10001","10001","10101","11011","10001"], 'X':["10001","01010","00100","01010","10001"], 'Y':["10001","01010","00100","00100","00100"], 'Z':["11111","00010","00100","01000","11111"], 'Ç':["0110","1000","1000","1000","0111"], '0':["0110","1001","1001","1001","0110"], '1':["010","110","010","010","111"], '2':["1110","0001","0110","1000","1111"], '3':["1110","0001","0110","0001","1110"], '4':["1001","1001","1111","0001","0001"], '5':["1111","1000","1110","0001","1110"], '6':["0110","1000","1110","1001","0110"], '7':["1111","0001","0010","0100","0100"], '8':["0110","1001","0110","1001","0110"], '9':["0110","1001","0111","0001","0110"], ':':["0","1","0","1","0"], ' ':["0","0","0","0","0"], '!':["1","1","1","0","1"] };
+
+/**
+ * drawText - Renderiza texto usando fonte bitmap
+ * Cada caractere é renderizado pixel por pixel usando setPixel.
+ */
+function drawText(text, px, py, color, scale = 2) {
+  let x = px;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i].toUpperCase();
+    const pattern = FONT[ch] || FONT[' '];
+    for (let row = 0; row < pattern.length; row++) {
+      for (let col = 0; col < pattern[row].length; col++) {
+        if (pattern[row][col] === '1') {
+          for (let sy = 0; sy < scale; sy++) {
+            for (let sx = 0; sx < scale; sx++) {
+              setPixel(x + col*scale + sx, py + row*scale + sy, color[0], color[1], color[2], color[3]);
+            }
+          }
+        }
+      }
+    }
+    x += pattern[0].length * scale + 2;
+  }
+}
+
+// ====== FUNÇÕES DO MAPA ======
+
+/**
+ * mapSet - Escreve um pixel no buffer do mapa (viewport)
+ */
+function mapSet(x, y, r, g, b) {
+  if(x<0||x>=MAP_W||y<0||y>=MAP_H) return;
+  const i = (Math.floor(y)*MAP_W + Math.floor(x))*4;
+  pixMap[i]=r; pixMap[i+1]=g; pixMap[i+2]=b; pixMap[i+3]=255;
+}
+
+/**
+ * mapRect - Desenha um retângulo no mapa (viewport)
+ */
+function mapRect(x, y, w, h, c) {
+  for(let py=y|0; py<(y+h)|0; py++) for(let px=x|0; px<(x+w)|0; px++) mapSet(px, py, c[0], c[1], c[2]);
+}
+
+/**
+ * renderMap - Renderiza o viewport/radar (mini-mapa) com todos os objetos
+ * 
+ * Cria uma miniatura do jogo em escala 0.4x (200x160 pixels).
+ * Mostra em tempo real as posições de todos os objetos:
+ * - Balão (vermelho)
+ * - Ouriços (roxo)
+ * - Mina (cinza branco)
+ * - Estrela (amarelo)
+ */
+function renderMap() {
+  // Limpa o buffer do mapa (preenche com preto)
+  pixMap.fill(0);
+  // Define alpha como 255 (opaco) para todos os pixels
+  for(let i=3; i<pixMap.length; i+=4) pixMap[i]=255;
+  
+  // Escala: 0.4x (200x160 em relação aos 500x400 originais)
+  let s = 0.4;
+  
+  // Desenha balão no mini-mapa (vermelho)
+  mapRect(balloonX*s, balloonY*s, 6, 6, [255,50,50]);
+  // Desenha cada ouriço (roxo)
+  spikes.forEach(k => mapRect(k.x*s, k.y*s, 6, 6, [150,50,200]));
+  // Desenha mina se ativa (cinza claro)
+  if(mine.active) mapRect(mine.x*s, mine.y*s, 5, 5, [200,200,200]);
+  // Desenha estrela se ativa (amarelo)
+  if(star.active) mapRect(star.x*s, star.y*s, 5, 5, [255,255,0]);
+}
+
+// ============================================================================
+// LÓGICA DO JOGO
+// Máquina de estados, colisões, spawn de entidades, dificuldade progressiva
+// ============================================================================
+
+/**
+ * reset - Reinicializa o jogo para um novo início de partida
+ */
+function reset() {
+  balloonY = H/2;
+  score = 0;
+  spikes = [];
+  for (let i=0; i<5; i++) {
+    spikes.push({
+      x: 400 + i * 220,
+      y: 50 + Math.random()*(H-100),
+      r: 20,
+      angle: 0
+    });
+  }
+  star.active = false;
+  star.timer = 0;
+  mine.active = false;
+  mine.timer = 0;
+}
+
+function update() {
+  // Incrementa score a cada frame (1 ponto por frame = ~60 por segundo)
+  score++;
+
+  // Velocidade base e velocidade de rotação dos ouriços
+  let currentSpeed = 2.0;
+  let currentRotSpeed = 0.02;
+
+  // Dificuldade progressiva: velocidade aumenta com score
+  if (score > 2000) { currentSpeed = 3.0; currentRotSpeed = 0.05; }
+  if (score > 12000) { currentSpeed = 4.5; currentRotSpeed = 0.08; }
+
+  // Encontra o ouriço mais à direita (para spawn dos próximos)
+  let maxRightX = -9999;
+  for (const s of spikes) { if (s.x > maxRightX) maxRightX = s.x; }
+
+  // ========== LÓGICA DOS OURIÇOS ==========
+  for (const s of spikes) {
+    s.angle -= currentRotSpeed;
+    const spikeTipRadius = s.r + 10;
+    const collisionDist = spikeTipRadius + balloonR - 2;
+    const dist = Math.sqrt((s.x-balloonX)**2 + (s.y-balloonY)**2);
+    if (dist < collisionDist) {
+      gameOver();
+    }
+    s.x -= currentSpeed;
+    if (s.x < -40) {
+      s.x = Math.max(W, maxRightX) + 200 + Math.random() * 100;
+      s.y = 50 + Math.random()*(H-100);
+      maxRightX = s.x;
+    }
+  }
+
+  // ========== LÓGICA DA MINA ==========
+  if (score > 5000) {
+    if (!mine.active) {
+      mine.timer++;
+      if (mine.timer > 300 + Math.random() * 200) {
+        mine.active = true;
+        mine.x = W + 50;
+        mine.y = balloonY;
+        mine.timer = 0;
+      }
+    } else {
+      mine.x -= 7.0;
+      mine.angle += 0.009;
+      const distMine = Math.sqrt((mine.x - balloonX)**2 + (mine.y - balloonY)**2);
+      if (distMine < (mine.r + 5) + balloonR) {
+        gameOver();
+      }
+      if (mine.x < -50) mine.active = false;
+    }
+  }
+
+  // ========== LÓGICA DA ESTRELA ==========
+  if (!star.active) {
+    star.timer++;
+    if (star.timer > 600) {
+      star.active = true;
+      star.x = W+50;
+      star.y = 50+Math.random()*(H-100);
+      star.timer = 0;
+    }
+  } else {
+    star.x -= currentSpeed;
+    if (star.x < -50) star.active = false;
+    star.pulseAngle += 0.1;
+    star.scale = 1.0 + Math.sin(star.pulseAngle) * 0.2;
+    const dist = Math.sqrt((star.x-balloonX)**2 + (star.y-balloonY)**2);
+    if (dist < (star.baseRadius * star.scale) + balloonR) {
+      score += 100;
+      star.active = false;
+    }
+  }
+
+  // ========== CONTROLE DO BALÃO ==========
+  if (keys.ArrowUp) balloonY = Math.max(balloonR+5, balloonY - BALLOON_SPEED);
+  if (keys.ArrowDown) balloonY = Math.min(H-balloonR-5, balloonY + BALLOON_SPEED);
+}
+
+/**
+ * gameOver - Encerra a partida quando o balão colide com um obstáculo
+ */
+function gameOver() {
+  gameState = GAME_STATE.GAME_OVER;
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('cgHighScore', highScore);
+  }
+  document.getElementById('scoreVal').innerText = "Score: " + score + "  |  High: " + highScore;
+  show('menu-over');
+}
+
+/**
+ * renderGame - Renderiza o estado visual do jogo a cada frame
+ * 
+ * Responsável por:
+ * - Desenhar fundo com gradiente
+ * - Renderizar balão, ouriços, estrela e mina
+ * - Mostrar placar e avisos
+ * - Usar setPixel para todos os desenhos
+ */
+function renderGame() {
+  // ========== FUNDO COM GRADIENTE ==========
+  // Gradiente azul do topo (céu) para verde (grama) de baixo
+  let i = 0;
+  for (let y = 0; y < H; y++) {
+    // Fator de interpolação: 0 no topo, 1 embaixo
+    const fac = y / H;
+    // Cor vermelha: 100 (topo) a 20 (embaixo)
+    const r = Math.floor(100 * (1 - fac) + 20 * fac);
+    // Cor verde: 180 (topo) a 60 (embaixo)
+    const g = Math.floor(180 * (1 - fac) + 60 * fac);
+    // Cor azul: 255 (topo) a 100 (embaixo)
+    const b = Math.floor(255 * (1 - fac) + 100 * fac);
+
+    // Preenche cada pixel dessa linha com a cor interpolada
+    for (let x = 0; x < W; x++) {
+      pixels[i] = r;
+      pixels[i+1] = g;
+      pixels[i+2] = b;
+      pixels[i+3] = 255;
+      i += 4;
+    }
+  }
+
+  // ========== RENDERIZAR BALÃO ==========
+  // Corpo do balão (elipse laranja)
+  fillBalloonAA(balloonX, balloonY, 22, 28, [255,80,0,255]);
+  // Reflexo de luz no balão (pequeno círculo branco)
+  fillCircleAA(balloonX-8, balloonY-8, 6, [255,180,100,150]);
+  // Corda do balão (linha branca que vai até o chão)
+  const stringStartY = balloonY + 28;
+  drawLineAA(balloonX, stringStartY, balloonX, stringStartY + 35, [240, 240, 240, 200]);
+
+  // ========== RENDERIZAR ENTIDADES ESPECIAIS ==========
+  // Desenha estrela se ativa (com animação de pulsação)
+  if (star.active) drawStarAA(star.x, star.y, star.baseRadius, star.scale, [255,215,0,255]);
+  // Desenha mina se ativa (com rotação 3D)
+  if (mine.active) drawMineAA(mine.x, mine.y, mine.r);
+
+  // ========== RENDERIZAR OURIÇOS ==========
+  for (const s of spikes) {
+    // Corpo principal (círculo roxo escuro)
+    fillCircleAA(s.x, s.y, s.r, [26, 11, 46, 255]);
+    // Espinhos ao redor (8 espinhos)
+    const n = 8;
+    for (let i=0; i<n; i++) {
+      // Calcula ângulo do espinho i
+      const ang = ((Math.PI*2*i)/n) + s.angle;
+      // Ponto inicial (na borda do corpo)
+      const x1 = s.x + Math.cos(ang) * s.r;
+      const y1 = s.y + Math.sin(ang) * s.r;
+      // Ponto final (ponta do espinho)
+      const x2 = s.x + Math.cos(ang) * (s.r + 10);
+      const y2 = s.y + Math.sin(ang) * (s.r + 10);
+      // Desenha linha do espinho com anti-aliasing
+      drawLineAA(x1, y1, x2, y2, [60, 40, 80, 255]);
+    }
+  }
+
+  // ========== HUD (Heads-Up Display) ==========
+  // Mostra placar em tempo real
+  drawText(`SCORE: ${score}`, 15, 20, [255,255,255,255], 1);
+  drawText(`HIGH:  ${highScore}`, 15, 35, [255,220,0,255], 1);
+
+  // Aviso de mina chegando (pisca em vermelho/amarelo)
+  if (score > 3000 && !mine.active && mine.timer > 200) {
+    const blinkWarn = Math.floor(mine.timer / 10) % 2 === 0;
+    const warnColor = blinkWarn ? [255, 0, 0, 255] : [255, 255, 0, 255];
+    drawText("!", W-30, balloonY, warnColor, 2);
+  }
+}
+
+/**
+ * drawIntro - Renderiza a tela de introdução/splash screen
+ * 
+ * Mostra o título do jogo por alguns frames antes de ir para o menu
+ */
+/**
+ * floodFill - Preenche uma área conectada com uma cor (algoritmo BFS)
+ * Algoritmo clássico de preenchimento por inundação
+ * 
+ * @param {number} startX, startY - Ponto inicial
+ * @param {array} newColor - [R, G, B] cor de preenchimento
+ */
+function floodFill(startX, startY, newColor) {
+  startX = Math.floor(startX);
+  startY = Math.floor(startY);
+  
+  // Cor original no ponto inicial
+  const index = (startY * W + startX) * 4;
+  const origR = pixels[index];
+  const origG = pixels[index + 1];
+  const origB = pixels[index + 2];
+  
+  // Se já é a cor de destino, retorna
+  if (origR === newColor[0] && origG === newColor[1] && origB === newColor[2]) return;
+  
+  // Fila para BFS (breadth-first search)
+  const queue = [[startX, startY]];
+  const visited = new Set();
+  
+  while (queue.length > 0) {
+    const [x, y] = queue.shift();
+    const key = x + ',' + y;
+    
+    if (visited.has(key)) continue;
+    if (x < 0 || x >= W || y < 0 || y >= H) continue;
+    
+    const idx = (y * W + x) * 4;
+    if (pixels[idx] !== origR || pixels[idx + 1] !== origG || pixels[idx + 2] !== origB) continue;
+    
+    visited.add(key);
+    setPixel(x, y, newColor[0], newColor[1], newColor[2], 255);
+    
+    queue.push([x + 1, y]);
+    queue.push([x - 1, y]);
+    queue.push([x, y + 1]);
+    queue.push([x, y - 1]);
+  }
+}
+
+/**
+ * drawStar - Desenha uma estrela preenchida usando setPixel
+ * @param {number} centerX - Posição X do centro da estrela
+ * @param {number} centerY - Posição Y do centro da estrela
+ * @param {number} size - Tamanho da estrela (raio)
+ * @param {array} color - Cor [R, G, B, A]
+ */
+function drawStar(centerX, centerY, size, color) {
+  // Desenha uma estrela simples com 5 pontas preenchida
+  const points = [];
+  for (let i = 0; i < 10; i++) {
+    const angle = (i * Math.PI) / 5;
+    const radius = i % 2 === 0 ? size : size / 2;
+    const x = centerX + radius * Math.sin(angle);
+    const y = centerY - radius * Math.cos(angle);
+    points.push([Math.round(x), Math.round(y)]);
+  }
+  
+  // Preenche a estrela com um método simples: desenha linhas de cada ponta ao centro
+  for (let i = 0; i < 5; i++) {
+    const p1 = points[i * 2];
+    const p2 = points[i * 2 + 1];
+    bresenhamLine(p1[0], p1[1], centerX, centerY, color);
+    bresenhamLine(centerX, centerY, p2[0], p2[1], color);
+  }
+  
+  // Desenha o contorno da estrela
+  for (let i = 0; i < points.length; i++) {
+    const p1 = points[i];
+    const p2 = points[(i + 1) % points.length];
+    bresenhamLine(p1[0], p1[1], p2[0], p2[1], color);
+  }
+}
+
+/**
+ * bresenhamLine - Desenha uma linha usando algoritmo de Bresenham
+ * @param {number} x0 - Ponto inicial X
+ * @param {number} y0 - Ponto inicial Y
+ * @param {number} x1 - Ponto final X
+ * @param {number} y1 - Ponto final Y
+ * @param {array} color - Cor [R, G, B, A]
+ */
+function bresenhamLine(x0, y0, x1, y1, color) {
+  const dx = Math.abs(x1 - x0);
+  const dy = Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1;
+  const sy = y0 < y1 ? 1 : -1;
+  let err = dx - dy;
+  let x = x0, y = y0;
+  
+  while (true) {
+    setPixel(x, y, color[0], color[1], color[2], color[3]);
+    if (x === x1 && y === y1) break;
+    const e2 = 2 * err;
+    if (e2 > -dy) err -= dy, x += sx;
+    if (e2 < dx) err += dx, y += sy;
+  }
+}
+
+/**
+ * drawIntro - Desenha tela de introdução com animação com floodfill
+ * Fase 1: BALOURIÇO branco
+ * Fase 2: Colore BALOURIÇO letra por letra com floodfill (cor do balão)
+ * Fase 3: Mostra "Apresenta"
+ * Fase 4: Mostra "Pressione Espaço" piscante
+ */
+function drawIntro() {
+  // Fundo sólido azul escuro
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      setPixel(x, y, 20, 30, 60, 255);
+    }
+  }
+  
+  const cx = W/2, cy = H/2;
+  const balloonColor = [255, 80, 0, 255]; // Cor laranja do balão
+  const whiteColor = [255, 255, 255, 255];
+  const yellowColor = [255, 255, 0, 255]; // Amarelo para a estrela
+  const text = "STAR ★ PROJECTS"; // Nome da empresa
+  const starX = cx - 10; // Posição entre STAR e PROJECTS
+  
+  // FASE 1 (frames 0-40): Desenha texto em branco
+  if (introFrame < 40) {
+    drawText(text, cx-100, cy-40, whiteColor, 4);
+    drawStar(starX, cy-40, 8, yellowColor); // Estrela amarela entre STAR e PROJECTS
+  }
+  // FASE 2 (frames 40-120): Colore com floodfill
+  else if (introFrame >= 40 && introFrame < 120) {
+    // Desenha texto em branco
+    drawText(text, cx-100, cy-40, whiteColor, 4);
+    drawStar(starX, cy-40, 8, yellowColor); // Estrela amarela entre STAR e PROJECTS
+    // Floodfill no centro do texto (apenas na primeira vez desta fase)
+    if (introFrame === 40) {
+      floodFill(cx, cy - 40, balloonColor);
+    }
+  }
+  // FASE 3 (frames 120-200): Texto colorido + "Apresenta"
+  else if (introFrame >= 120 && introFrame < 200) {
+    drawText(text, cx-100, cy-40, balloonColor, 4);
+    drawStar(starX, cy-40, 8, yellowColor); // Estrela amarela entre STAR e PROJECTS
+    drawText("Apresenta", cx-50, cy+20, [100, 200, 255, 255], 2);
+  }
+  // FASE 4 (frames 200+): Continua com Apresenta até 300 frames para transição
+  else {
+    drawText(text, cx-100, cy-40, balloonColor, 4);
+    drawStar(starX, cy-40, 8, yellowColor); // Estrela amarela entre STAR e PROJECTS
+    drawText("Apresenta", cx-50, cy+20, [100, 200, 255, 255], 2);
+  }
+}
+
+/**
+ * drawIntro2 - Renderiza a segunda tela de introdução
+ * Fase 1: BALAOZIN branco
+ * Fase 2: Colore BALAOZIN com floodfill (cor do balão)
+ * Fase 3: BALAOZIN colorido + "Pressione Espaço" piscante
+ */
+function drawIntro2() {
+  // Fundo sólido azul escuro
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      setPixel(x, y, 20, 30, 60, 255);
+    }
+  }
+  
+  const cx = W/2, cy = H/2;
+  const balloonColor = [255, 80, 0, 255]; // Cor laranja do balão
+  const whiteColor = [255, 255, 255, 255];
+  const text = "BALAOZIN"; // Nome do personagem
+  
+  // FASE 1 (frames 0-40): Desenha BALAOZIN em branco
+  if (introFrame < 40) {
+    drawText(text, cx-80, cy-40, whiteColor, 4);
+  }
+  // FASE 2 (frames 40-120): Colore com floodfill
+  else if (introFrame >= 40 && introFrame < 120) {
+    // Desenha texto em branco
+    drawText(text, cx-80, cy-40, whiteColor, 4);
+    // Floodfill no centro do texto (apenas na primeira vez desta fase)
+    if (introFrame === 40) {
+      floodFill(cx, cy - 40, balloonColor);
+    }
+  }
+  // FASE 3 (frames 120+): Texto colorido + "Pressione Espaço" piscante
+  else {
+    drawText(text, cx-80, cy-40, balloonColor, 4);
+    const blink = Math.floor((introFrame - 120) / 20) % 2 === 0;
+    const instrColor = blink ? [100, 200, 255, 255] : [255, 100, 150, 255];
+    drawText("PRESSIONE ESPACO", cx-80, cy+100, instrColor, 1);
+  }
+}
+
+/**
+ * render - Loop principal de animação (requestAnimationFrame)
+ */
+function render() {
+  if (gameState === GAME_STATE.INTRO) {
+    if (introPhase === 1) {
+      drawIntro();
+    } else if (introPhase === 2) {
+      drawIntro2();
+    }
+    introFrame++;
+    // Não vai automaticamente para MENU - espera apertar espaço
+  } else if (gameState === GAME_STATE.PLAYING) {
+    update();
+    renderGame();
+    renderMap();
+  } else if (gameState === GAME_STATE.GAME_OVER || gameState === GAME_STATE.PAUSED) {
+    renderGame();
+    renderMap();
+  }
+
+  // Renderizar no canvas principal
+  const imgData = ctx.createImageData(W, H);
+  imgData.data.set(pixels);
+  ctx.putImageData(imgData, 0, 0);
+
+  // Renderizar no mapa
+  const imgMapData = ctxMap.createImageData(MAP_W, MAP_H);
+  imgMapData.data.set(pixMap);
+  ctxMap.putImageData(imgMapData, 0, 0);
+
+  requestAnimationFrame(render);
+}
+
+// ============================================================================
+// FUNÇÕES DE MENU E CONTROLE DE ESTADO
+// ============================================================================
+
+/**
+ * show - Mostra/oculta menus
+ * Oculta todos os menus e mostra apenas o solicitado
+ */
+function show(id) {
+  document.getElementById('menu-main').classList.add('hidden');
+  document.getElementById('menu-instr').classList.add('hidden');
+  document.getElementById('menu-pause').classList.add('hidden');
+  document.getElementById('menu-over').classList.add('hidden');
+  if (id) document.getElementById(id).classList.remove('hidden');
+}
+
+/**
+ * goMenu - Retorna ao menu principal
+ */
+function goMenu() {
+  gameState = GAME_STATE.MENU;
+  show('menu-main');
+}
+
+/**
+ * startGame - Inicia uma nova partida
+ */
+function startGame() {
+  reset();
+  gameState = GAME_STATE.PLAYING;
+  show(null);
+}
+
+/**
+ * resumeGame - Retoma um jogo pausado
+ */
+function resumeGame() {
+  gameState = GAME_STATE.PLAYING;
+  show(null);
+}
+
+// ============================================================================
+// EVENT LISTENERS (Teclado)
+// ============================================================================
+
+/**
+ * keydown - Evento de tecla pressionada
+ * Controla:
+ * - Setas: movimento do balão (rastreado em objeto 'keys')
+ * - P: pausar o jogo
+ * - R: reiniciar a partida
+ * - ESC: ir para menu
+ */
+window.addEventListener('keydown', e => {
+  // Rastreia setas para movimento contínuo
+  if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
+  
+  // Espaço: sai da INTRO e vai para a próxima fase ou MENU
+  if (e.key === ' ' && gameState === GAME_STATE.INTRO) {
+    if (introPhase === 1) {
+      // Passou da primeira intro para a segunda
+      introPhase = 2;
+      introFrame = 0;
+    } else if (introPhase === 2) {
+      // Passou da segunda intro para o MENU
+      gameState = GAME_STATE.MENU;
+      show('menu-main');
+    }
+  }
+  
+  // Pausa o jogo com 'P'
+  if (e.key.toLowerCase() === 'p' && gameState === GAME_STATE.PLAYING) {
+    gameState = GAME_STATE.PAUSED;
+    show('menu-pause');
+  }
+  
+  // Reinicia com 'R' durante o jogo ou após game over
+  if (e.key.toLowerCase() === 'r') {
+    if (gameState === GAME_STATE.PLAYING || gameState === GAME_STATE.GAME_OVER) {
+      startGame();
+    }
+  }
+  
+  // Menu principal com 'ESC'
+  if (e.key === 'Escape') {
+    goMenu();
+  }
+});
+
+/**
+ * keyup - Evento de tecla liberada
+ * Libera o rastreamento das setas
+ */
+window.addEventListener('keyup', e => {
+  if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
+});
+
+// ============================================================================
+// INICIALIZAÇÃO
+// ============================================================================
+
+// Reseta o jogo (cria entidades iniciais)
+reset();
+// Inicia o loop de renderização (requestAnimationFrame a ~60 FPS)
+requestAnimationFrame(render);
+</script>
+
+</body>
+</html>
