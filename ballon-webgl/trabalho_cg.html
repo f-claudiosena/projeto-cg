@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Balãozin - Trabalho CG (Scanline & AA)</title>
+  <title>Balãozin - Trabalho CG (Scanline, Clipping & AA)</title>
   <style>
     body { 
       margin: 0; 
@@ -232,7 +232,8 @@
       ⬆️ ⬇️ <strong>CONTROLE:</strong> Use setas para mover o balão<br><br>
       ⭐ <strong>ESTRELA:</strong> Vale +100 pontos<br><br>
       💣 <strong>MINA:</strong> Aparece após 5k pontos<br><br>
-      🟣 <strong>OURIÇOS:</strong> Evite a todo custo!
+      🟣 <strong>OURIÇOS:</strong> Evite a todo custo!<br><br>
+      🌬️ <strong>VENTOS:</strong> Linhas brancas clippadas pela tela (Cohen‑Sutherland)
     </div>
     <div class="menu-option" onclick="show('menu-main')">← VOLTAR</div>
   </div>
@@ -269,7 +270,7 @@
 
 <script>
 // ============================================================================
-// BALÃOZIN - Trabalho de Computação Gráfica
+// BALÃOZIN - Trabalho de Computação Gráfica (com Clipping)
 // ============================================================================
 
 const W = 500, H = 400;
@@ -339,7 +340,36 @@ let star = { x: -100, y: 0, active: false, baseRadius: 15, scale: 1.0, pulseAngl
 let mine = { x: -100, y: 0, r: 20, active: false, timer: 0, blinkTimer: 0, angle: 0 };
 
 // ============================================================================
-// FUNÇÕES GRÁFICAS - SETPIXEL & ANTI-ALIASING
+// CLIPPING (COHEN-SUTHERLAND) - INTEGRADO DO clipping.html
+// ============================================================================
+
+const INSIDE = 0, LEFT = 1, RIGHT = 2, BOTTOM = 4, TOP = 8;
+
+function computeOutCode(x, y) {
+    let code = INSIDE;
+    if (x < 0) code |= LEFT; else if (x >= W) code |= RIGHT;
+    if (y < 0) code |= BOTTOM; else if (y >= H) code |= TOP;
+    return code;
+}
+
+function cohenSutherlandClip(x0, y0, x1, y1) {
+    let code0 = computeOutCode(x0, y0);
+    let code1 = computeOutCode(x1, y1);
+    while (true) {
+        if (!(code0 | code1)) return {x0, y0, x1, y1};
+        if (code0 & code1) return null;
+        let x, y, outcodeOut = code0 ? code0 : code1;
+        if (outcodeOut & TOP) { x = x0 + (x1 - x0) * (H - 1 - y0) / (y1 - y0); y = H - 1; }
+        else if (outcodeOut & BOTTOM) { x = x0 + (x1 - x0) * (0 - y0) / (y1 - y0); y = 0; }
+        else if (outcodeOut & RIGHT) { y = y0 + (y1 - y0) * (W - 1 - x0) / (x1 - x0); x = W - 1; }
+        else if (outcodeOut & LEFT) { y = y0 + (y1 - y0) * (0 - x0) / (x1 - x0); x = 0; }
+        if (outcodeOut === code0) { x0 = x; y0 = y; code0 = computeOutCode(x0, y0); }
+        else { x1 = x; y1 = y; code1 = computeOutCode(x1, y1); }
+    }
+}
+
+// ============================================================================
+// FUNÇÕES GRÁFICAS - SETPIXEL, ANTI-ALIASING E CLIPPING
 // ============================================================================
 
 /**
@@ -403,6 +433,24 @@ function blendPixel(x, y, r, g, b, alphaFactor) {
   pixels[i+3] = 255;
 }
 
+/**
+ * drawLineSafe - Desenha uma linha aplicando clipping de Cohen‑Sutherland
+ */
+function drawLineSafe(x0, y0, x1, y1, color) {
+    const clipped = cohenSutherlandClip(x0, y0, x1, y1);
+    if (!clipped) return;
+    
+    // Simples DDA para linha com AA
+    let dx = clipped.x1 - clipped.x0, dy = clipped.y1 - clipped.y0;
+    let steps = Math.max(Math.abs(dx), Math.abs(dy));
+    for(let i=0; i<=steps; i++) {
+        setPixelAA(clipped.x0 + dx*i/steps, clipped.y0 + dy*i/steps, color[0], color[1], color[2], color[3] || 255);
+    }
+}
+
+/**
+ * drawLineAA - Versão AA (Wu) original mantida
+ */
 function drawLineAA(x0, y0, x1, y1, color) {
   let steep = Math.abs(y1 - y0) > Math.abs(x1 - x0);
   if (steep) { [x0, y0] = [y0, x0]; [x1, y1] = [y1, x1]; }
@@ -566,7 +614,6 @@ function scanlineTextureAA(vertices, uvs, image, targetCtx = null, targetW = W, 
         if (a > 0) {
           if (useBuffer) {
             // Desenha no buffer principal usando setPixelAA (que faz blend se precisar)
-            // Aqui passamos x, y inteiros, mas o setPixelAA trata
             setPixelAA(x, y, r, g, b, a);
           } else if (targetCtx) {
             // Fallback para preview (ImageData direto)
@@ -690,6 +737,39 @@ function drawBalloonWithPolygonTexture(cx, cy, rx, ry, image) {
 
   // 3. Adicionar o brilho (reflexo) por cima
   fillCircleAA(cx - 8, cy - 8, 6, [255, 180, 100, 150]);
+}
+
+// ============================================================================
+// ELEMENTOS DO CLIPPING DEMONSTRATIVOS (VENTOS)
+// ============================================================================
+
+let winds = [];
+let windSpawnTimer = 0;
+
+function spawnWind() {
+    winds.push({ 
+        x: W + 50, 
+        y: Math.random() * H, 
+        len: 50 + Math.random() * 100, 
+        speed: 5 + Math.random() * 5 
+    });
+}
+
+function updateWinds() {
+    windSpawnTimer++;
+    if (windSpawnTimer % 30 === 0) spawnWind();
+    
+    winds.forEach((w, i) => { 
+        w.x -= w.speed; 
+        if(w.x < -200) winds.splice(i, 1); 
+    });
+}
+
+function drawWinds() {
+    winds.forEach(w => {
+        // Linhas clippadas com Cohen‑Sutherland
+        drawLineSafe(w.x, w.y, w.x - w.len, w.y, [255, 255, 255, 100]);
+    });
 }
 
 // ============================================================================
@@ -863,6 +943,8 @@ function reset() {
   balloonY = H/2;
   score = 0;
   spikes = [];
+  winds = [];
+  windSpawnTimer = 0;
   for (let i=0; i<5; i++) {
     spikes.push({
       x: 400 + i * 220,
@@ -905,6 +987,9 @@ function update() {
       maxRightX = s.x;
     }
   }
+
+  // Atualizar ventos (clipping)
+  updateWinds();
 
   if (score > 3000) {
     if (!mine.active) {
@@ -982,6 +1067,9 @@ function renderGame() {
       i += 4;
     }
   }
+
+  // Desenhar ventos (demonstração do clipping)
+  drawWinds();
 
   drawBalloonWithSkin(balloonX, balloonY, 22, 28, currentSkin);
   
