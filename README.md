@@ -289,7 +289,7 @@ for cada linha y:
 
 ## 🎓 Aprendizados de CG
 
-Este projeto ensina:
+Este projeto aplica:
 1. ✅ Manipulação direta de pixels
 2. ✅ Anti-aliasing e Bresenham
 3. ✅ Preenchimento por scanline
@@ -298,6 +298,31 @@ Este projeto ensina:
 6. ✅ Otimização de renderização
 7. ✅ Sistemas de coordenadas
 8. ✅ Detecção de colisões
+
+## 💡 Como fazer rodar?
+
+Passo a passo simples:
+1. Clonar o repositório do projeto
+   ```
+   git clone https://github.com/f-claudiosena/projeto-cg.git
+   ```
+   
+2. Acessar o diretório onde está o arquivo trabalho_cg.html
+   ```
+   cd /projeto-cg/balloon-webgl/
+   ```
+   
+3. Subir um servidor local para que as texturas sejam carregadas
+   ```
+   python -m http.server 8000
+   ```
+   
+4. Agora basta abrir o localhost no navegador web na porta que está o projeto, no exemplo, é a 8000
+   ```
+   http://localhost:8000/trabalho_cg.html
+   ```
+   
+5. Agora é só pontuar o máximo que conseguir!
 
 ## 📄 Licença
 
