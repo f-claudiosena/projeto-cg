@@ -324,6 +324,11 @@ Passo a passo simples:
    
 5. Agora é só pontuar o máximo que conseguir!
 
+## Vídeo de apresentação do jogo
+```
+https://drive.google.com/file/d/1_FfY6l6ioYEyL0NUe7qWBv5Xc7tJHUsS/view?usp=drive_link
+```
+
 ## 📄 Licença
 
 Este projeto é fornecido como material educacional.
